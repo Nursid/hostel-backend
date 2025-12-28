@@ -28,6 +28,22 @@ app.get('/', (req, res) => {
     res.send('Hello!');
 });
 
+app.get('/users', (req, res) => {
+  res.send('Hello!, Nursid');
+});
+
+app.get('/students', (req, res) => {
+  const query = 'SELECT * FROM student LIMIT 5';
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching students:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(results);
+  });
+});
+
 const PORT = process.env.PORT ||  3000;
 
 app.listen(PORT, () => {
