@@ -9,169 +9,7 @@ const S_Session = db.S_Session
 const S_Semester = db.S_Semester
 const S_section = db.S_section
 
-// const studentsMonthlyReport = async (req, res) => {
-//     try {
-//         if (!req.session || !req.session.id) {
-//             return res.status(401).json({ message: "Unauthorized" });
-//         }
-
-//         const {
-//             start_date = dayjs().format("YYYY-MM-DD"),
-//             end_date = dayjs().format("YYYY-MM-DD"),
-//             dept = 0,
-//             session = 0,
-//             section = 0,
-//             semester = 0,
-//             subject = 0
-//         } = req.body;
-
-//         let loginId = req.session.type === "P"
-//             ? req.session.empCompany
-//             : req.session.login_id;
-
-//         const cmpName = await Login.findOne({ where: { id: loginId } });
-
-//         // ============= GET STUDENT LIST =============
-//         const users = await Student.findAll({
-//             where: {
-//                 bid: loginId,
-//                 department: dept,
-//                 batch: session,
-//                 semester: semester,
-//                 left_date: "",
-//                 status: 1
-//             },
-//             order: [["roll_no", "ASC"]]
-//         });
-
-//         const startTime = dayjs(start_date).startOf("day").valueOf();
-//         const endTime = dayjs(end_date).endOf("day").valueOf();
-
-//         const allSubjects = await Subject.findAll({
-//             where: { bid: loginId, status: 1 },
-//             order: [["id", "DESC"]]
-//         });
-
-//         let reportArray = [];
-//         let subjectWiseData = {};
-//         let daysArray = [];
-
-//         for (let user of users) {
-
-//             // days difference
-//             let diffDays = dayjs(end_date).diff(dayjs(start_date), "day") + 1;
-//             if (diffDays > 31) diffDays = 31;
-
-//             let monthStart = dayjs(start_date).startOf("day").valueOf();
-//             let monthEnd = dayjs(start_date).endOf("day").add(diffDays, "day").valueOf();
-
-//             // GET ATTENDANCE OF STUDENT
-//             let attendance = await StudentAttendance.findAll({
-//                 where: {
-//                     student_id: user.id,
-//                     bid: loginId,
-//                     status: 1,
-//                     time: { between: [startTime, endTime] }
-//                 },
-//                 order: [["time", "DESC"]]
-//             });
-
-//             // subject filter
-//             if (subject > 0) {
-//                 attendance = attendance.filter(a => a.subject_id == subject);
-//             }
-
-//             let monthData = [];
-
-//             for (let d = 0; d < diffDays; d++) {
-
-//                 let dayStart = dayjs(start_date).hour(10).add(d, "day").valueOf();
-//                 let dayEnd = dayjs(start_date).endOf("day").add(d, "day").valueOf();
-
-//                 daysArray.push(dayjs(dayStart).format("DD"));
-
-//                 let dayAttendance = attendance.filter(
-//                     a => a.time >= dayStart && a.time <= dayEnd
-//                 );
-
-//                 let data = [];
-
-//                 if (dayAttendance.length > 0) {
-//                     for (let at of dayAttendance) {
-
-//                         data.push({
-//                             time: at.time,
-//                             subject_id: at.subject_id || 0,
-//                             student_status: at.student_status || ""
-//                         });
-
-//                         // Track subject-wise count
-//                         if (at.subject_id > 0) {
-//                             const key = dayjs(dayStart).format("YYYY-MM-DD");
-//                             subjectWiseData[key] = subjectWiseData[key] || {};
-//                             subjectWiseData[key][at.subject_id] =
-//                                 (subjectWiseData[key][at.subject_id] || 0) + 1;
-//                         }
-//                     }
-//                 }
-
-//                 monthData.push({
-//                     date: dayjs(dayStart).format("D"),
-//                     day: dayjs(dayStart).format("dddd"),
-//                     data
-//                 });
-//             }
-
-//             if (monthData.length > 0) {
-//                 reportArray.push({
-//                     user_id: user.id,
-//                     name: user.name,
-//                     data: monthData
-//                 });
-//             }
-//         }
-
-//         // --------- EXTRA INFO (BRANCH / BATCH / SEMESTER / SECTION / SUBJECT) ----------
-//         let branch = await DepartmentSection.findOne({ where: { id: dept } });
-//         let batch = await S_Session.findOne({ where: { id: session } });
-//         let sem = await S_Semester.findOne({ where: { id: semester } });
-//         let sectionData = await S_section.findOne({ where: { id: section } });
-
-//         let subjectName = "";
-//         if (subject > 0) {
-//             let s = await Subject.findOne({ where: { id: subject } });
-//             if (s) subjectName = s.name;
-//         }
-
-//         // FINAL RESPONSE
-//         return res.json({
-//             start_date,
-//             end_date,
-//             dept,
-//             session,
-//             section,
-//             semester,
-//             subject,
-//             report: reportArray,
-//             days: [...new Set(daysArray)],
-//             subject_wise_data: subjectWiseData,
-//             all_subjects: allSubjects,
-//             branch_name: branch ? branch.name : "",
-//             batch_name: batch ? batch.session_name : "",
-//             semester_name: sem ? sem.semestar_name : "",
-//             section_name: sectionData ? sectionData.name : "",
-//             subject_name: subjectName,
-//             cmp_name: cmpName ? cmpName.name : ""
-//         });
-
-//     } catch (err) {
-//         console.log(err);
-//         res.status(500).json({ error: "Server Error", details: err.message });
-//     }
-// };
-
-
-// controllers/studentReport.controller.js
+const attendanceService = require("../services/attendance.service");
 
 const { Op, fn, col, where, literal } = require("sequelize");
 async function getPeriodTime(subjectId, dayNumber) {
@@ -413,5 +251,21 @@ const studentsMonthlyReport = async (req, res) => {
   }
 };
 
+const TeacherDailyReport = async (req, res, next) => {
+  try {
+    const companyId = req.body.companyId;
+    const filters = req.query;
 
-module.exports = { studentsMonthlyReport }
+    const data = await attendanceService.getDailyAttendance(companyId, filters);
+
+    res.json({ success: true, data });
+  } catch (e) {
+    next(e);
+  }
+};
+
+
+
+
+
+module.exports = { studentsMonthlyReport, TeacherDailyReport }
