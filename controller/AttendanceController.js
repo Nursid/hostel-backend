@@ -10,6 +10,7 @@ const S_Semester = db.S_Semester
 const S_section = db.S_section
 
 const attendanceService = require("../services/attendance.service");
+const monthlyAttendanceService = require("../services/monthly.attendance.service");
 
 const { Op, fn, col, where, literal } = require("sequelize");
 async function getPeriodTime(subjectId, dayNumber) {
@@ -264,8 +265,26 @@ const TeacherDailyReport = async (req, res, next) => {
   }
 };
 
+const TeacherMonthlyReport = async (req, res) => {
+  try {
+    const data = await monthlyAttendanceService.generateMonthlyReport({
+      companyId: 7077,
+      start_date: '2026-01-01',
+      end_date: '2026-01-5',
+      department: 'all',
+      section: 'all',
+      action: 1
+    });
+
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
 
 
 
-module.exports = { studentsMonthlyReport, TeacherDailyReport }
+
+module.exports = { studentsMonthlyReport, TeacherDailyReport, TeacherMonthlyReport }
