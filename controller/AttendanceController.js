@@ -254,11 +254,8 @@ const studentsMonthlyReport = async (req, res) => {
 
 const TeacherDailyReport = async (req, res, next) => {
   try {
-    const companyId = req.body.companyId;
-    const filters = req.query;
-
-    const data = await attendanceService.getDailyAttendance(companyId, filters);
-
+    const {start_date, action, shift, section, department, companyId} = req.body;
+    const data = await attendanceService.getDailyAttendance(start_date, action, shift, section, department, companyId);
     res.json({ success: true, data });
   } catch (e) {
     next(e);
@@ -266,14 +263,15 @@ const TeacherDailyReport = async (req, res, next) => {
 };
 
 const TeacherMonthlyReport = async (req, res) => {
+  const {companyId, start_date, end_date,department, section, action} = req.body
   try {
     const data = await monthlyAttendanceService.generateMonthlyReport({
-      companyId: 7077,
-      start_date: '2026-01-01',
-      end_date: '2026-01-5',
-      department: 'all',
-      section: 'all',
-      action: 1
+      companyId: companyId,
+      start_date,
+      end_date,
+      department,
+      section,
+      action
     });
 
     res.json({ success: true, data });

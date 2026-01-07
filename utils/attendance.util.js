@@ -45,15 +45,29 @@ exports.groupPunches = (records) => {
   return { ins, outs };
 };
 
-exports.calculateWorkingSeconds = (ins, outs) => {
-  let sec = 0;
-  for (let i = 0; i < ins.length; i++) {
-    if (outs[i] && outs[i] > ins[i]) {
-      sec += outs[i] - ins[i];
+exports.calculateWorkingSeconds = (records) => {
+  if (!records || !records.length) return 0;
+
+  let total = 0;
+  let lastIn = null;
+
+  // 1️⃣ Sort punches by time
+  records.sort((a, b) => a.io_time - b.io_time);
+
+  for (const r of records) {
+    if (r.mode === "in") {
+      lastIn = r.io_time;
+    }
+
+    if (r.mode === "out" && lastIn && r.io_time > lastIn) {
+      total += r.io_time - lastIn;
+      lastIn = null;
     }
   }
-  return sec;
+
+  return total;
 };
+
 
   
   

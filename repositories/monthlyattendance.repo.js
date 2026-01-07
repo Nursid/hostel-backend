@@ -9,6 +9,7 @@ const {
 } = require("../models");
 const { Op } = require("sequelize");
 
+
 exports.getUsers = async (companyId) => {
   return await UserRequestModel.findAll({
     where: {
@@ -23,7 +24,7 @@ exports.getUsers = async (companyId) => {
           }
         ]
       }
-    ]
+    ], 
   })
 };
 
@@ -44,14 +45,16 @@ exports.getAttendance = async (start, end, bid) => {
         [Op.ne]: "Log"
       }
     },
-    order: [["io_time", "DESC"]]
+    order: [["io_time", "DESC"]],
+    raw: true  
   });
 };
 
 // attendance.service.js
 exports.getRules = async (bid) => {
   return AttendanceRule.findAll({
-    where: { bid }
+    where: { bid },
+    raw: true  
   });
 };
 
@@ -62,7 +65,8 @@ exports.getLeaves = async (start, end, bid) => {
       bid: bid,
       status: 1,
       from_date: { [Op.between]: [start, end] }
-    }
+    },
+    raw: true  
   });
 };
 
@@ -81,6 +85,7 @@ exports.getHolidays = async (companyId) => {
       where: {
         id: companyId
       },
+      raw: true  
     })
   };
 

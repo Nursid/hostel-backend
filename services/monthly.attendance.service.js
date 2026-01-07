@@ -1,7 +1,7 @@
 const repo = require("../repositories/monthlyattendance.repo");
 const utils = require("../utils/attendance.util");
 const rulesEngine = require("../utils/attendance.rules");
-
+const {ACTION_CONFIG} = require("../utils")
 const DAY = 86400;
 
 /* ================= HELPERS ================= */
@@ -21,8 +21,9 @@ const isWeekOff = (ts, weeklyOffArr = []) => {
 const formatHrs = sec => {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")} Hr`;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} Hr`;
 };
+
 
 const generateDaysHeader = (start, end) => {
   const daysweek = [];
@@ -76,12 +77,21 @@ exports.generateMonthlyReport = async ({
 
   /* ================= INDEX DATA ================= */
 
+
   const punchMap = new Map();
-  punches.forEach(p => {
-    const key = `${p.user_id}_${dateKey(p.io_time)}`;
-    if (!punchMap.has(key)) punchMap.set(key, []);
-    punchMap.get(key).push(p);
-  });
+
+    punches.forEach(p => {
+      p.time = p.io_time;   // 👈 FIX HERE
+
+      const userId = p.user_id;
+
+      if (!punchMap.has(userId)) {
+        punchMap.set(userId, []);
+      }
+
+      punchMap.get(userId).push(p);
+    });
+
 
   const leaveMap = new Map();
   leaves.forEach(l => {
@@ -93,7 +103,6 @@ exports.generateMonthlyReport = async ({
   const ruleMap = new Map(rules.map(r => [r.rule_id, r]));
 
   /* ================= MAIN LOGIC ================= */
-
   const report = users.map(user => {
 
     const weeklyOffArr = user?.Login?.BusinessGroup?.weekly_off?.split(",") || [];
@@ -115,7 +124,16 @@ exports.generateMonthlyReport = async ({
     for (let d = start; d <= end; d += DAY) {
 
       const dk = dateKey(d);
-      const punchesOfDay = punchMap.get(`${user.user_id}_${dk}`) || [];
+      // const punchesOfDay = punchMap.get(user.user_id) || [];
+
+      const allPunches = punchMap.get(user.user_id) || [];
+
+        const dayStart = d;
+        const dayEnd = d + DAY;
+
+        const punchesOfDay = allPunches.filter(p =>
+          p.io_time >= dayStart && p.io_time < dayEnd
+        );
 
       const weekOff = isWeekOff(d, weeklyOffArr);
       const holiday = holidaySet.has(dk);
@@ -158,10 +176,9 @@ exports.generateMonthlyReport = async ({
         continue;
       }
 
-      /* ---------- HAS PUNCH ---------- */
+      const sec = utils.calculateWorkingSeconds(punchesOfDay);
 
-      const { ins, outs } = utils.groupPunches(punchesOfDay);
-      const sec = utils.calculateWorkingSeconds(ins, outs);
+
       totalWorkingSeconds += sec;
 
       const r = rulesEngine.applyRules({
@@ -244,6 +261,8 @@ exports.generateMonthlyReport = async ({
     };
   });
 
+  const uiFlags = ACTION_CONFIG[action] || ACTION_CONFIG[1];
+
   return {
     start_date,
     end_date,
@@ -251,6 +270,7 @@ exports.generateMonthlyReport = async ({
     report,
     cmp_name: login?.name,
     daysweek,
-    days
+    days,
+    uiFlags
   };
 };

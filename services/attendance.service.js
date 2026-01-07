@@ -1,16 +1,15 @@
 const repo = require("../repositories/attendance.repo");
 const { secondsToHrs,isSameDay, expandLeaveDates } = require("../utils/attendance.util");
 
-exports.getDailyAttendance = async (companyId, filters) => {
-  const { date } = filters;
+exports.getDailyAttendance = async (start_date, action, shift, section, department, companyId) => {
 
   const {
     users = [],
     attendance = [],
     leaves = [],
     holidays = [],
-    rules = []
-  } = await repo.getDailyRawData(companyId, date);
+    rules = [],
+  } = await repo.getDailyRawData(companyId, start_date);
 
  
   /* ---------- INDEXING ---------- */
@@ -35,17 +34,18 @@ exports.getDailyAttendance = async (companyId, filters) => {
     );
   });
   
-
+  
   const ruleMap = {};
   rules?.value.forEach(r => (ruleMap[r.rule_id] = r));
 
-  const selectedDate = date
-  ? new Date(`${date}T00:00:00`)
+  const selectedDate = start_date
+  ? new Date(`${start_date}T00:00:00`)
   : new Date();
 
   selectedDate.setHours(0, 0, 0, 0);
 
   const startDay = Math.floor(selectedDate.getTime() / 1000);
+  const selectedDateStr = selectedDate.toLocaleDateString('en-CA');
 
 
   /* ---------- COUNTERS ---------- */
@@ -152,16 +152,16 @@ exports.getDailyAttendance = async (companyId, filters) => {
     if (unverified === "1") summary.totalUnverified++;
 
 
-    if (rule.wh_cal === "1" && data.length > 1) {
-      workingSeconds =
-        data[data.length - 1].time - data[0].time;
-    } else {
-      for (let i = 0; i < ins.length; i++) {
-        if (outs[i] && outs[i] > ins[i]) {
-          workingSeconds += outs[i] - ins[i];
-        }
-      }
-    }
+    // if (rule.wh_cal === "1" && data.length > 1) {
+    //   workingSeconds =
+    //     data[data.length - 1].time - data[0].time;
+    // } else {
+    //   for (let i = 0; i < ins.length; i++) {
+    //     if (outs[i] && outs[i] > ins[i]) {
+    //       workingSeconds += outs[i] - ins[i];
+    //     }
+    //   }
+    // }
 
     if (
       rule.halfday_on === "1" &&
@@ -182,10 +182,10 @@ exports.getDailyAttendance = async (companyId, filters) => {
     
 
     const hasOut = data.some(d => d.mode === "out");
-if (rule.mispunch === "1" && data.length && !hasOut) {
-  mispunch = "1";
-  summary.totalMispunch++;
-}
+    if (rule.mispunch === "1" && data.length && !hasOut) {
+      mispunch = "1";
+      summary.totalMispunch++;
+    }
 
 
 const shiftStart = user?.Login?.BusinessGroup?.shift_start;
@@ -231,16 +231,36 @@ if (shiftEnd && outs[outs.length - 1]) {
     
 
     /* ---------- OUTS ALIGNMENT (PHP LOGIC) ---------- */
-    while (outs.length < ins.length) {
-      outs.push(0);
-    }
+    // while (outs.length < ins.length) {
+    //   outs.push(0);
+    // }
 
-    /* ---------- WORKING HOURS ---------- */
-    for (let i = 0; i < ins.length; i++) {
-      if (outs[i] && outs[i] > ins[i]) {
-        workingSeconds += outs[i] - ins[i];
-      }
+    // /* ---------- WORKING HOURS ---------- */
+    // for (let i = 0; i < ins.length; i++) {
+    //   if (outs[i] && outs[i] > ins[i]) {
+    //     workingSeconds += outs[i] - ins[i];
+    //   }
+    // }
+
+let lastInTime = null;
+
+// data array already bana hua hai (mode + time)
+const punchesSorted = data
+  .slice()
+  .sort((a, b) => a.time - b.time);
+
+for (const p of punchesSorted) {
+  if (p.mode === "in") {
+    lastInTime = p.time;
+  }
+
+  if (p.mode === "out" && lastInTime !== null) {
+    if (p.time > lastInTime) {
+      workingSeconds += (p.time - lastInTime);
     }
+    lastInTime = null; // IN–OUT pair complete
+  }
+}
 
     const workingHrs = secondsToHrs(workingSeconds);
 
@@ -290,8 +310,10 @@ if (shiftEnd && outs[outs.length - 1]) {
     });
   }
 
+
+
   return {
-    start_date: date,
+    start_date: selectedDateStr,
     load: 1,
     report,
     summary
