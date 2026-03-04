@@ -41,6 +41,9 @@ db.SectionModel = require('./SectionModel')(sequelize, DataTypes);
 db.UserRequestModel = require('./UserRequestModel')(sequelize, DataTypes);
 db.Attendance = require('./Attendance')(sequelize, DataTypes);
 db.AttendanceRule = require('./AttendanceRule')(sequelize, DataTypes);
+db.CtcHead = require('./SalaryHeadModel')(sequelize, DataTypes);
+db.Salary = require('./SalaryModel')(sequelize, DataTypes);
+db.SalaryBasic = require('./SalaryBasicModel')(sequelize, DataTypes);
 
 
 // UserRequestModel ↔ Login

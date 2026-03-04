@@ -3,7 +3,6 @@ const utils = require("../utils/attendance.util");
 const rulesEngine = require("../utils/attendance.rules");
 const {ACTION_CONFIG} = require("../utils")
 const DAY = 86400;
-
 /* ================= HELPERS ================= */
 
 const dateKey = ts =>
