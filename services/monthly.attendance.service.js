@@ -53,8 +53,16 @@ exports.generateMonthlyReport = async ({
   action,
 }) => {
 
-  const start = Math.floor(new Date(`${start_date} 00:00:00`).getTime() / 1000);
-  const end   = Math.floor(new Date(`${end_date} 23:59:59`).getTime() / 1000);
+  // const start = Math.floor(new Date(`${start_date} 00:00:00`).getTime() / 1000);
+  // const end   = Math.floor(new Date(`${end_date} 23:59:59`).getTime() / 1000);
+
+
+  const today = new Date();
+  const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const defaultEnd   = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  const start = start_date ? Math.floor(new Date(`${start_date} 00:00:00`).getTime()/1000) : Math.floor(defaultStart.getTime()/1000);
+  const end   = end_date ? Math.floor(new Date(`${end_date} 23:59:59`).getTime()/1000) : Math.floor(defaultEnd.getTime()/1000);
 
   const { daysweek, days } = generateDaysHeader(start, end);
   /* 🔥 BULK DB CALLS (FAST) */
