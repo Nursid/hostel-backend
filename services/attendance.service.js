@@ -193,7 +193,8 @@ const shiftEnd = user?.Login?.BusinessGroup?.shift_end;
 
 if (shiftStart && ins.length) {
   const inTime = new Date(ins[0] * 1000);
-  const shStart = new Date(`${date} ${shiftStart}`);
+  // const shStart = new Date(`${date} ${shiftStart}`);
+  const shStart = new Date(`${selectedDateStr} ${shiftStart}`);
 
   if (inTime > shStart) {
     lateSeconds = (inTime - shStart) / 1000;
@@ -211,7 +212,8 @@ if (shiftStart && ins.length) {
 
 if (shiftEnd && outs[outs.length - 1]) {
   const outTime = new Date(outs[outs.length - 1] * 1000);
-  const shEnd = new Date(`${date} ${shiftEnd}`);
+  // const shEnd = new Date(`${date} ${shiftEnd}`);
+  const shEnd = new Date(`${selectedDateStr} ${shiftEnd}`);
 
   if (shEnd > outTime) {
     earlySeconds = (shEnd - outTime) / 1000;
