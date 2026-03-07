@@ -22,6 +22,10 @@ exports.getDailyRawData = async (companyId, date) => {
     rules
   ] = await Promise.allSettled([
     UserRequestModel.findAll({
+      where: {
+        business_id: id,
+        left_date: ''
+      },
       include: [
         {
           model: Login,
@@ -35,7 +39,8 @@ exports.getDailyRawData = async (companyId, date) => {
             }
           ]
         }
-      ]
+      ],
+      order: [['doj', 'ASC']]
     }),
 
     Attendance.findAll({

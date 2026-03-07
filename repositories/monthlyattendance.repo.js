@@ -12,6 +12,10 @@ const { Op } = require("sequelize");
 
 exports.getUsers = async (companyId) => {
   return await UserRequestModel.findAll({
+    where: {
+      business_id: id,
+      left_date: ''
+    },
     include: [
       {
         model: Login,
@@ -25,7 +29,8 @@ exports.getUsers = async (companyId) => {
           company: companyId
         },
       }
-    ], 
+    ],
+    order: [['doj', 'ASC']] 
   })
 };
 
