@@ -22,12 +22,13 @@ exports.getDailyRawData = async (companyId, date) => {
     rules
   ] = await Promise.allSettled([
     UserRequestModel.findAll({
-      where: {
-        business_id: companyId
-      },
       include: [
         {
           model: Login,
+          required: true,
+          where: {
+            company: companyId
+          },
           include: [
             {
               model: BusinessModel

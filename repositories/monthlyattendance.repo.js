@@ -12,9 +12,6 @@ const { Op } = require("sequelize");
 
 exports.getUsers = async (companyId) => {
   return await UserRequestModel.findAll({
-    where: {
-      business_id: companyId
-    },
     include: [
       {
         model: Login,
@@ -22,7 +19,11 @@ exports.getUsers = async (companyId) => {
           {
             model: BusinessModel
           }
-        ]
+        ],
+        required: true, // INNER JOIN
+        where: {
+          company: companyId
+        },
       }
     ], 
   })
@@ -83,7 +84,7 @@ exports.getHolidays = async (companyId) => {
   exports.getLoginUser = async (companyId) => {
     return await Login.findOne({
       where: {
-        id: companyId
+        company: companyId
       },
       raw: true  
     })

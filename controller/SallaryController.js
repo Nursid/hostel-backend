@@ -292,7 +292,7 @@ const createSallary = async (req, res) => {
       return {
         sid: salaryMap[key],
         header_id: sb.header_id,
-        header_type: sb.header_type,
+        header_type: 'Manual',
         amount: sb.amount
       };
     });
@@ -308,7 +308,7 @@ const createSallary = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Salary imported / updated successfully 🚀",
-      allSalaries
+      finalSalaryBasic
     });
 
   } catch (error) {
