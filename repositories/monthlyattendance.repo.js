@@ -13,7 +13,7 @@ const { Op } = require("sequelize");
 exports.getUsers = async (companyId) => {
   return await UserRequestModel.findAll({
     where: {
-      business_id: id,
+      business_id: companyId,
       left_date: ''
     },
     include: [

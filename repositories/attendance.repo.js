@@ -23,7 +23,7 @@ exports.getDailyRawData = async (companyId, date) => {
   ] = await Promise.allSettled([
     UserRequestModel.findAll({
       where: {
-        business_id: id,
+        business_id: companyId,
         left_date: ''
       },
       include: [
