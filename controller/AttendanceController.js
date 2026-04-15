@@ -281,8 +281,73 @@ const TeacherMonthlyReport = async (req, res) => {
   }
 };
 
+const studentAttendanceSimple = async (req, res) => {
+  try {
+    const { student_id, start_date, end_date } = req.body;
+
+    if (!student_id || !start_date || !end_date) {
+      return res.status(400).json({
+        status: false,
+        msg: "student_id, start_date, end_date required"
+      });
+    }
+
+    // convert to unix timestamp
+    const startTime = dayjs(start_date).startOf("day").unix();
+    const endTime = dayjs(end_date).endOf("day").unix();
+
+    // get student
+    const student = await db.Student.findOne({
+      where: { id: student_id }
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        status: false,
+        msg: "Student not found"
+      });
+    }
+
+    // get attendance
+    const attendance = await db.StudentAttendance.findAll({
+      where: {
+        student_id: student_id,
+        status: 1,
+        time: {
+          [Op.between]: [startTime, endTime]
+        }
+      },
+      order: [["time", "ASC"]]
+    });
+
+    // format response
+    const formatted = attendance.map(a => ({
+      date: dayjs.unix(a.time).format("YYYY-MM-DD"),
+      time: dayjs.unix(a.time).format("HH:mm"),
+      status: "P"
+    }));
+
+    return res.json({
+      status: true,
+      student: {
+        id: student.id,
+        name: student.name
+      },
+      total_records: formatted.length,
+      attendance: formatted
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      status: false,
+      msg: "Server error"
+    });
+  }
+};
 
 
 
 
-module.exports = { studentsMonthlyReport, TeacherDailyReport, TeacherMonthlyReport }
+
+module.exports = { studentsMonthlyReport, TeacherDailyReport, TeacherMonthlyReport, studentAttendanceSimple }
